@@ -10,6 +10,7 @@ package com.example.jdbc
 
 import slick.driver.PostgresDriver.api._
 import spray.json._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object TaskDAO {
   //TODO unit tests
@@ -22,7 +23,7 @@ object TaskDAO {
                    complete: Boolean
                    )
 
-  object Task extends DefaultJsonProtocol{
+  object Task extends DefaultJsonProtocol {
     implicit val taskFormat = jsonFormat3(Task.apply)
   }
 
@@ -64,17 +65,28 @@ object TaskDAO {
 
   private def updateTaskQuery(task: Task) = tasksQuery.filter(_.id === task.id).update(task)
 
-  def addTask(task: Task) = db.run(addTaskQuery(task))
+  private def insertOrUpdateTaskQuery(task: Task) = task.id match {
+    case None => throw new Exception//fail
+    case Some(id) => for {
+      tOption <- getTaskByIdQuery(id)
+      result <- tOption match {
+        case None => tasksQuery forceInsert task //TODO: this needs to update the autoInc value
+        case Some(_) => updateTaskQuery(task)
+      }
+    } yield result
+  }
 
-  def getTasks = db.run(getTasksQuery)
+def addTask (task: Task) = db.run (addTaskQuery (task) )
 
-  def getTaskById(taskId: Int) = db.run(getTaskByIdQuery(taskId))
+def getTasks = db.run (getTasksQuery)
 
-  def deleteTask(taskId: Int) = db.run(deleteTaskQuery(taskId))
+def getTaskById (taskId: Int) = db.run (getTaskByIdQuery (taskId) )
 
-  def updateTask(task: Task) = db.run(updateTaskQuery(task))
+def deleteTask (taskId: Int) = db.run (deleteTaskQuery (taskId) )
 
-  def setup(tasks: Seq[Task]) = db.run(setupStatements(tasks))
+def updateTask (task: Task) = db.run (insertOrUpdateTaskQuery (task) )
+
+def setup (tasks: Seq[Task] ) = db.run (setupStatements (tasks) )
 
 //  def main(args: Array[String]) {
 //    try {
