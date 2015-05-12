@@ -2,6 +2,7 @@ package com.example
 
 import akka.actor.{ActorLogging, Actor}
 import com.example.jdbc.TaskDAO
+import com.example.jdbc.TaskDAO.TaskImplicits._
 import com.example.jdbc.TaskDAO.Task
 import spray.http.HttpHeaders.Location
 import spray.routing._

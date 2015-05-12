@@ -2,7 +2,7 @@ package com.example
 
 import com.example.jdbc.TaskDAO
 import com.example.jdbc.TaskDAO.Task
-import com.example.jdbc.TaskDAO.Task._
+import com.example.jdbc.TaskDAO.TaskImplicits._
 import org.specs2.mutable.Specification
 import org.specs2.time.NoTimeConversions
 import spray.testkit.Specs2RouteTest
@@ -11,6 +11,7 @@ import StatusCodes._
 import scala.concurrent._
 import scala.concurrent.duration._
 import spray.httpx.SprayJsonSupport._
+import java.sql.Date
 
 class TaskServiceSpec extends Specification with Specs2RouteTest with TaskService with NoTimeConversions {
   def actorRefFactory = system
@@ -20,8 +21,8 @@ class TaskServiceSpec extends Specification with Specs2RouteTest with TaskServic
 
 
   // since we are inserting into a fresh database, it's safe to assume these values will have ids of 1, 2 and 3 even though the values are determined by the database
-  val testData = Seq(Task(Some(1), "Do the first thing", complete = true), Task(Some(2), "Do the second thing", complete = false), Task(Some(3), "Do the third thing", complete = false))
-  val postData = Task(Some(testData.length + 1), "Do another thing", complete = true)
+  val testData = Seq(Task(Some(1), "Do the first thing", complete = true, new Date(1,1,1)), Task(Some(2), "Do the second thing", complete = false, new Date(1,1,1)), Task(Some(3), "Do the third thing", complete = false, new Date(1,1,1)))
+  val postData = Task(Some(testData.length + 1), "Do another thing", complete = true, new Date(1,1,1))
 
   sequential //TODO: set these up with mockito rather than data checking
 

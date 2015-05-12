@@ -8,6 +8,9 @@ package com.example.jdbc
  */
 
 
+import java.sql.Date
+import java.text.SimpleDateFormat
+
 import slick.driver.PostgresDriver.api._
 import spray.json._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -20,11 +23,23 @@ object TaskDAO {
   case class Task(
                    id: Option[Int],
                    text: String,
-                   complete: Boolean
+                   complete: Boolean,
+                   createdDate: Date
                    )
 
-  object Task extends DefaultJsonProtocol {
-    implicit val taskFormat = jsonFormat3(Task.apply)
+  object TaskImplicits extends DefaultJsonProtocol {
+    implicit val taskFormat = jsonFormat4(Task.apply)
+    implicit object DateTOLongJsonFormat extends RootJsonFormat[Date] {
+
+      val format = new SimpleDateFormat("MM-dd-yyyy")
+
+      override def write(obj: Date) = JsString(format.format(obj))
+
+      override def read(json: JsValue) : Date = json match {
+        case JsString(s) => new Date(format.parse(s).getTime())
+        case _ => throw new DeserializationException("Error info you want here ...")
+      }
+    }
   }
 
   class Tasks(tag: Tag) extends Table[Task](tag, "tasks") {
@@ -34,7 +49,9 @@ object TaskDAO {
 
     def complete = column[Boolean]("complete")
 
-    def * = (id, name, complete) <>((Task.apply _).tupled, Task.unapply)
+    def createdDate = column[Date]("created")
+
+    def * = (id, name, complete, createdDate) <>((Task.apply _).tupled, Task.unapply)
   }
 
   val tasksQuery = TableQuery[Tasks]
