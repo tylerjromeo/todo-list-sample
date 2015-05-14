@@ -45,70 +45,64 @@ trait TaskService extends HttpService {
     }
 
   val taskRoute =
-    pathPrefix("tasks") {
-      pathEndOrSingleSlash {
-        get {
-          respondWithMediaType(`application/json`) {
-            onSuccess(TaskDAO.getTasks) { value =>
-              complete(value)
-            }
-          }
-        }
-      } ~
-        post {
-          entity(as[Task]) { task =>
-            onSuccess(TaskDAO.addTask(task)) { value =>
-              requestUri { uri =>
-                respondWithHeader(Location(uri + s"/${value}")) {
-                  complete(StatusCodes.Created, task.copy(id=value))
+    pathPrefix(Segment) {
+      user =>
+        pathPrefix("tasks") {
+          pathEndOrSingleSlash {
+            get {
+              respondWithMediaType(`application/json`) {
+                onSuccess(TaskDAO.getTasks(Some(user))) { value =>
+                  complete(value)
                 }
               }
             }
-          }
-        } ~
-        path(IntNumber) {
-          param =>
-            get {
-              respondWithMediaType(`application/json`) {
-                onSuccess(TaskDAO.getTaskById(param)) {
-                  value =>
-                    complete(value)
+          } ~
+            post {
+              entity(as[Task]) { task =>
+                onSuccess(TaskDAO.addTask(task.copy(user = Some(user)))) { value =>
+                  requestUri { uri =>
+                    respondWithHeader(Location(uri + s"/${value}")) {
+                      complete(StatusCodes.Created, task.copy(id = value))
+                    }
+                  }
                 }
               }
             } ~
-              delete {
-                onSuccess(TaskDAO.deleteTask(param)) {
-                  value =>
-                    complete(StatusCodes.NoContent)
-                }
-              } ~
-              put {
-                entity(as[Task]) {
-                  task =>
-                    //if the task doesn't have an id, fail. If it does make sure it matches the path param
-                    validate(task.id.exists(_ == param), "Task id does not match path") {
-                      onSuccess(TaskDAO.updateTask(task)) {
-                        value =>
-                          requestUri {
-                            uri =>
-                              respondWithHeader(Location(uri)) {
-                                complete(StatusCodes.Created, task)
+            path(IntNumber) {
+              param =>
+                get {
+                  respondWithMediaType(`application/json`) {
+                    onSuccess(TaskDAO.getTaskById(param)) {
+                      value =>
+                        complete(value)
+                    }
+                  }
+                } ~
+                  delete {
+                    onSuccess(TaskDAO.deleteTask(param)) {
+                      value =>
+                        complete(StatusCodes.NoContent)
+                    }
+                  } ~
+                  put {
+                    entity(as[Task]) {
+                      task =>
+                        //if the task doesn't have an id, fail. If it does make sure it matches the path param
+                        validate(task.id.exists(_ == param), "Task id does not match path") {
+                          onSuccess(TaskDAO.updateTask(task.copy(user = Some(user)))) {
+                            value =>
+                              requestUri {
+                                uri =>
+                                  respondWithHeader(Location(uri)) {
+                                    complete(StatusCodes.Created, task)
+                                  }
                               }
                           }
-                      }
+                        }
                     }
-                }
-              }
+                  }
+            }
         }
-    } ~ path("setup") {
-      post {
-        entity(as[Seq[Task]]) { tasks =>
-          onSuccess(TaskDAO.setup(tasks)) {
-            value =>
-              complete(StatusCodes.Created)
-          }
-        }
-      }
     }
 
 }

@@ -14,26 +14,29 @@ import spray.json._
 object TaskDAO {
   //TODO unit tests
 
-  val db = Database.forConfig("postgres")
+  val db = Database.forConfig("h2mem1")
 
   case class Task(
                    id: Option[Int],
                    text: String,
-                   complete: Boolean
+                   complete: Boolean,
+                   user: Option[String]
                    )
 
-  object Task extends DefaultJsonProtocol{
-    implicit val taskFormat = jsonFormat3(Task.apply)
+  object Task extends DefaultJsonProtocol {
+    implicit val taskFormat = jsonFormat4(Task.apply)
   }
 
   class Tasks(tag: Tag) extends Table[Task](tag, "tasks") {
     def id = column[Option[Int]]("task_id", O.PrimaryKey, O.AutoInc)
 
-    def name = column[String]("text")
+    def text = column[String]("text")
 
     def complete = column[Boolean]("complete")
 
-    def * = (id, name, complete) <>((Task.apply _).tupled, Task.unapply)
+    def user = column[Option[String]]("user")
+
+    def * = (id, text, complete, user) <>((Task.apply _).tupled, Task.unapply)
   }
 
   val tasksQuery = TableQuery[Tasks]
@@ -56,7 +59,10 @@ object TaskDAO {
 
   private def addTaskQuery(task: Task) = (tasksQuery returning tasksQuery.map(_.id)) += task
 
-  private def getTasksQuery = tasksQuery.result
+  private def getTasksQuery(user: Option[String]) = user match {
+    case Some(x) => tasksQuery.filter(_.user === x).result
+    case None => tasksQuery.result
+  }
 
   private def getTaskByIdQuery(taskId: Int) = tasksQuery.filter(_.id === taskId).result.headOption
 
@@ -66,7 +72,7 @@ object TaskDAO {
 
   def addTask(task: Task) = db.run(addTaskQuery(task))
 
-  def getTasks = db.run(getTasksQuery)
+  def getTasks(user: Option[String]) = db.run(getTasksQuery(user))
 
   def getTaskById(taskId: Int) = db.run(getTaskByIdQuery(taskId))
 
@@ -75,67 +81,5 @@ object TaskDAO {
   def updateTask(task: Task) = db.run(updateTaskQuery(task))
 
   def setup(tasks: Seq[Task]) = db.run(setupStatements(tasks))
-
-//  def main(args: Array[String]) {
-//    try {
-//      //      db.run(setup) onComplete {
-//      //        case Success(x) => {
-//      //          println("Success!!!")
-//      //        }
-//      //        case Failure(t) => {
-//      //          println("Failure")
-//      //          t.printStackTrace
-//      //        }
-//      //      }
-//      println(Task(Some(1), "test", true).toJson.prettyPrint)
-//      db.run(getTasks) onComplete {
-//        case Success(x) => {
-//          println("Success!!!")
-//          x.map(task => {
-//            println(s"${task.id} ${task.text} ${task.complete}")
-//            println(task.toJson.prettyPrint)
-//          })
-//        }
-//        case Failure(t) => {
-//          println("Failure")
-//          t.printStackTrace
-//        }
-//      }
-//      //      println(Task(Some(1), "test", true).toJson.prettyPrint)
-//      //            db.run(getTaskById(3)) onComplete {
-//      //              case Success(x) => {
-//      //                println("Success!!!")
-//      //                println(x.toJson.prettyPrint)
-//      //                x match {
-//      //                  case None => println("no task for that id")
-//      //                  case Some(task) => println(Task(Some(1), "test", true).toJson.prettyPrint) /*println(s"${task.id} ${task.text} ${task.complete}")*/
-//      //                }
-//      //              }
-//      //              case Failure(t) => {
-//      //                println("Failure")
-//      //                t.printStackTrace
-//      //              }
-//      //            }
-//      //      db.run(deleteTask(1)) onComplete {
-//      //        case Success(x) => {
-//      //          println("Success!!!")
-//      //        }
-//      //        case Failure(t) => {
-//      //          println("Failure")
-//      //          t.printStackTrace
-//      //        }
-//      //      }
-//      //      db.run(updateTask(Task(Some(2), "blorgle", true))) onComplete {
-//      //        case Success(x) => {
-//      //          println("Success!!!")
-//      //        }
-//      //        case Failure(t) => {
-//      //          println("Failure")
-//      //          t.printStackTrace
-//      //        }
-//      //      }
-//    } finally db.close()
-//
-//  }
 
 }
