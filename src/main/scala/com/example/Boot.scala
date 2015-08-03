@@ -21,5 +21,5 @@ object Boot extends App {
   // start a new HTTP server on port 8080 with our service actor as the handler
   val testData = Seq(Task(Some(1), "Do the first thing", complete = true), Task(Some(2), "Do the second thing", complete = false), Task(Some(3), "Do the third thing", complete = false))
   TaskDAO.setup(testData)
-  IO(Http) ? Http.Bind(service, interface = "localhost", port = 8080)
+  IO(Http) ? Http.Bind(service, interface = "0.0.0.0", port = 8080)
 }

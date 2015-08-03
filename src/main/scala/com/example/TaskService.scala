@@ -3,6 +3,7 @@ package com.example
 import akka.actor.{ActorLogging, Actor}
 import com.example.jdbc.TaskDAO
 import com.example.jdbc.TaskDAO.Task
+import com.example.proto.TaskProto
 import spray.http.HttpHeaders.Location
 import spray.routing._
 import spray.http._
@@ -69,10 +70,13 @@ trait TaskService extends HttpService {
         path(IntNumber) {
           param =>
             get {
-              respondWithMediaType(`application/json`) {
+              respondWithMediaType(MediaType.custom("application/x-protbuf")) {
                 onSuccess(TaskDAO.getTaskById(param)) {
-                  value =>
-                    complete(value)
+                  task =>
+                    task match {
+                      case Some(value) => complete(TaskProto(value.id, value.text, value.complete).toByteArray)
+                      case None => complete(StatusCodes.NotFound)
+                    }
                 }
               }
             } ~

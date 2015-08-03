@@ -23,7 +23,8 @@ libraryDependencies ++= {
     "org.slf4j"           %   "slf4j-nop"     % slf4jV,
     "org.postgresql"      %   "postgresql"    % postgresV,
     "io.spray"            %%  "spray-json"    % "1.3.1",
-    "com.h2database"      %   "h2"            % "1.4.187"
+    "com.h2database"      %   "h2"            % "1.4.187",
+    "net.sandrogrzicic"   %% "scalabuff-runtime" % "1.4.0"
   )
 }
 

@@ -1,0 +1,7 @@
+package com.example.proto;
+
+message TaskProto {
+    optional int32 id = 1;
+    required string text = 2;
+    required bool complete = 3;
+}
